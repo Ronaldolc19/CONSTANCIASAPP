@@ -46,6 +46,7 @@
                             @csrf @method('DELETE')
                             <button class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar?')">X</button>
                         </form>
+
                     </td>
                 </tr>
                 @endforeach

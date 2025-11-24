@@ -37,5 +37,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/constancias/{id}/historial', 
         [ConstanciaController::class, 'historial']
     )->name('constancias.historial');
+    Route::get('/constancias/{id}/ver', [ConstanciaController::class, 'verPDF'])
+    ->name('constancias.ver');
+    Route::get('/constancias/{id}/descargar', [ConstanciaController::class, 'descargarPDF'])
+    ->name('constancias.descargar');
 
 });

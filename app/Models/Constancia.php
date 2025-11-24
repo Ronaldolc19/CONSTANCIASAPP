@@ -63,5 +63,8 @@ class Constancia extends Model
 
         return $prefijo . str_pad($nuevo, 4, '0', STR_PAD_LEFT);
     }
-
+    public function historial()
+    {
+        return $this->hasMany(HistorialConstancia::class, 'id_constancia', 'id_constancia')->orderBy('fecha', 'desc');
+    }
 }

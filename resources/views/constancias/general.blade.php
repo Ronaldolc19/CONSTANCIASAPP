@@ -26,15 +26,6 @@
                        placeholder="Buscar por nombre, cuenta, folio, registro, empresa...">
             </div>
 
-            {{-- Estado --}}
-            <div class="col-md-3">
-                <select name="estado" class="form-select">
-                    <option value="">-- Estado --</option>
-                    <option value="pendientes" {{ request('estado') == 'pendientes' ? 'selected' : '' }}>Pendientes</option>
-                    <option value="emitidas" {{ request('estado') == 'emitidas' ? 'selected' : '' }}>Emitidas</option>
-                </select>
-            </div>
-
             {{-- Botón filtros --}}
             <div class="col-md-2">
                 <button class="btn btn-primary w-100">

@@ -155,158 +155,136 @@ class ConstanciaController extends Controller
         return view('constancias.general', compact('constancias'));
     }
     
-    public function generarDOCX($id)
+public function generarDOCX($id)
 {
-    $constancia = Constancia::with(['estudiante.carrera','empresa','periodo'])
+    $constancia = Constancia::with(['estudiante.carrera', 'empresa', 'periodo'])
         ->findOrFail($id);
 
-    // --- Género ---
-    $genero = strtolower($constancia->estudiante->genero);
-    $alumn  = ($genero === 'f') ? 'alumna' : 'alumno';
-    $adscr  = ($genero === 'f') ? 'adscrita' : 'adscrito';
+    // ================================
+    // 🔹 FECHA DE EMISIÓN
+    // ================================
+    $fechaEmision = Carbon::parse($constancia->fecha_emision ?? now())
+        ->locale('es')
+        ->translatedFormat('d \d\e F \d\e Y');
 
-    // --- Fecha emisión ---
-    if (!$constancia->fecha_emision) {
-        $constancia->fecha_emision = now();
-        $constancia->save();
-        $this->agregarHistorial($id, "generado");
-    } else {
-        $this->agregarHistorial($id, "visualizado");
+    // ================================
+    // 🔹 NOMBRE COMPLETO
+    // ================================
+    $nombreCompleto =
+        $constancia->estudiante->nombre . ' ' .
+        $constancia->estudiante->ap . ' ' .
+        $constancia->estudiante->am;
+
+    // ================================
+    // 🔹 ALUMNO / ALUMNA
+    // ================================
+    $genero = strtolower($constancia->estudiante->genero);
+    $alumn = ($genero === 'f') ? 'la alumna' : 'el alumno';
+    $adscr = ($genero === 'f') ? 'adscrita' : 'adscrito';
+
+    // ================================
+    // 🔹 PERIODO FORMATEADO
+    // ================================
+    $inicio = Carbon::parse($constancia->periodo->fecha_inicio)->locale('es');
+    $fin    = Carbon::parse($constancia->periodo->fecha_fin)->locale('es');
+
+    $periodoFormato =
+        $inicio->translatedFormat('d \d\e F \d\e Y') .
+        ' al ' .
+        $fin->translatedFormat('d \d\e F \d\e Y');
+
+    // ================================
+    // 🔹 VARIABLES DE REEMPLAZO
+    // ================================
+    $variables = [
+        '{{NOMBRE}}'       => $nombreCompleto,
+        '{{ALU}}'          => $alumn,
+        '{{CARRERA}}'      => $constancia->estudiante->carrera->nombre,
+        '{{NO_CUENTA}}'    => $constancia->estudiante->no_cuenta,
+        '{{EMPRESA}}'      => $constancia->empresa->nombre,
+        '{{PERIODO}}'      => $periodoFormato,
+        '{{ADSCR}}'        => $adscr,
+        '{{FECHA_EMISION}}'=> $fechaEmision,
+        '{{NO_REGISTRO}}'  => $constancia->no_registro,
+    ];
+
+    // ================================
+    // 🔹 RUTA DE LA PLANTILLA
+    // ================================
+    $templatePath = storage_path('app/plantillas/CONSTANCIAUP.docx');
+
+    if (!file_exists($templatePath)) {
+        return response()->json(["error" => "No se encontró la plantilla DOCX"]);
     }
 
-    // -----------------------
-    // Carpetas y rutas
-    // -----------------------
-    $tempFolder = storage_path('app/temp');
-    if (!file_exists($tempFolder)) mkdir($tempFolder, 0777, true);
+    // ================================
+    // 🔹 CARPETA TEMPORAL
+    // ================================
+    $tempDir = storage_path('app/temp');
+    if (!file_exists($tempDir)) mkdir($tempDir, 0777, true);
 
-    $templatePath = storage_path('app/plantillas/constancia.docx');
+    $tempFile = "$tempDir/constancia_$id.docx";
 
-    $outputDocx = $tempFolder."/constancia_$id.docx";
-    $outputPdf  = $tempFolder."/constancia_$id.pdf";
+    copy($templatePath, $tempFile);
 
-    copy($templatePath, $outputDocx);
-
-    // -----------------------
-    // Reemplazos
-    // -----------------------
-    $reemplazos = [
-        '{{nombre}}'        => $constancia->estudiante->nombre . ' ' . $constancia->estudiante->ap . ' ' . $constancia->estudiante->am,
-        '{{carrera}}'       => $constancia->estudiante->carrera->nombre,
-        '{{no_cuenta}}'     => $constancia->estudiante->no_cuenta,
-        '{{empresa}}'       => $constancia->empresa->nombre,
-        '{{periodo}}'       => $constancia->periodo->periodo_formateado,
-        '{{fecha_emision}}' => \Carbon\Carbon::parse(
-                                                        $constancia->fecha_emision ?: now()
-                                                    )->translatedFormat('d \d\e F \d\e Y'),
-        '{{no_registro}}'   => $constancia->no_registro,
-        '{{no_folio}}'      => $constancia->no_folio,
-        '{{calificacion}}'  => $constancia->calificacion,
-        '{{alumn}}'         => $alumn,
-        '{{adscripcion}}'   => $adscr,
-    ];
-
-    // -----------------------
-    // Archivos donde Word guarda texto (incluye textboxes)
-    // -----------------------
-    $archivosWord = [
-        'word/document.xml',
-        'word/header1.xml',
-        'word/header2.xml',
-        'word/header3.xml',
-        'word/footer1.xml',
-        'word/footer2.xml',
-        'word/footer3.xml',
-        'word/textbox.xml',
-        'word/textboxes.xml',
-        'word/drawings/drawing1.xml',
-        'word/drawings/drawing2.xml',
-        'word/drawings/drawing3.xml',
-        'word/drawings/vmlDrawing1.vml',
-        'word/drawings/vmlDrawing2.vml',
-        'word/drawings/vmlDrawing3.vml'
-    ];
-
-    // -----------------------
-    // Edición del DOCX
-    // -----------------------
+    // ================================
+    // 🔹 ABRIR DOCX COMO ZIP Y REEMPLAZAR
+    // ================================
     $zip = new \ZipArchive;
-    if ($zip->open($outputDocx) === TRUE) {
 
-        foreach ($archivosWord as $file) {
+    if ($zip->open($tempFile) === TRUE) {
 
-            if ($zip->locateName($file) === FALSE) continue;
+        $xml = $zip->getFromName('word/document.xml');
 
-            $xml = $zip->getFromName($file);
-
-            // Normalizar: Word segmenta textos dentro de <w:t>
-            $xml = preg_replace('/<w:t[^>]*>/', '', $xml);
-            $xml = preg_replace('/<\/w:t>/', '', $xml);
-
-            // Eliminar segmentación de Word dentro de <w:r>
-            $xml = preg_replace('/<w:r[^>]*>/', '', $xml);
-            $xml = preg_replace('/<\/w:r>/', '', $xml);
-
-            // Quitar saltos invisibles
-            $xml = str_replace(["\n", "\r", "\t"], '', $xml);
-
-            // Aplicar cada reemplazo
-            foreach ($reemplazos as $marker => $value) {
-                $xml = str_replace($marker, htmlspecialchars($value), $xml);
-            }
-
-            // Guardar el archivo modificado
-            $zip->addFromString($file, $xml);
+        if (!$xml) {
+            return response()->json(["error" => "No se pudo leer document.xml dentro del DOCX"]);
         }
 
+        foreach ($variables as $key => $value) {
+            $xml = str_replace($key, $value, $xml);
+        }
+
+        $zip->addFromString('word/document.xml', $xml);
         $zip->close();
+
     } else {
+        return response()->json(["error" => "No se pudo abrir archivo DOCX con ZipArchive"]);
+    }
 
+    // ================================
+    // 🔹 EXPORTAR A PDF EN storage/app/pdf
+    // ================================
+    $pdfDir = storage_path("app/pdf");
+    if (!file_exists($pdfDir)) mkdir($pdfDir, 0777, true);
+
+    $pdfPath = "$pdfDir/constancia_$id.pdf";
+
+    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+        $soffice = '"C:\\Program Files\\LibreOffice\\program\\soffice.exe"';
+    } else {
+        $soffice = '/usr/bin/libreoffice';
+    }
+
+    $command = "$soffice --headless --nologo --nofirststartwizard --convert-to pdf \"$tempFile\" --outdir \"$pdfDir\" 2>&1";
+
+    exec($command, $output, $exitCode);
+
+    if (!file_exists($pdfPath)) {
         return response()->json([
-            'error' => 'No se pudo abrir la plantilla DOCX'
+            "error"    => "LibreOffice no generó el PDF",
+            "comando"  => $command,
+            "exitCode" => $exitCode,
+            "logs"     => $output
         ]);
     }
 
-    // -----------------------
-    // CONVERTIR DOCX → PDF
-    // -----------------------
-    $soffice = '"C:\Program Files\LibreOffice\program\soffice.exe"';
+    // Registrar historial
+    $this->agregarHistorial($id, "generado");
 
-    $command = $soffice
-        .' --headless --convert-to pdf "'.$outputDocx.'" --outdir "'.$tempFolder.'"';
-
-    exec($command . " 2>&1", $logs, $exitCode);
-
-    if (!file_exists($outputPdf)) {
-        return response()->json([
-            "error"         => "LibreOffice no generó el PDF",
-            "comando"       => $command,
-            "exit_code"     => $exitCode,
-            "logs"          => $logs
-        ]);
-    }
-
-    // -----------------------
-    // Enviar PDF al navegador
-    // -----------------------
-    return response()->file($outputPdf);
+    return back()->with("success", "Constancia generada correctamente.");
 }
 
 
-    private function convertToPDF($docxPath, $pdfPath)
-    {
-        $libreOfficePath = '"C:\Program Files\LibreOffice\program\soffice.exe"';
-        
-        $command = $libreOfficePath . ' --headless --convert-to pdf "' . $docxPath . '" --outdir "' . dirname($pdfPath) . '"';
-        
-        exec($command, $output, $returnCode);
-        
-        if ($returnCode !== 0) {
-            throw new \Exception('Error al convertir DOCX a PDF');
-        }
-        
-        return true;
-    }
     private function agregarHistorial($id_constancia, $accion)
     {
         \App\Models\HistorialConstancia::create([
@@ -318,12 +296,42 @@ class ConstanciaController extends Controller
     }
     public function historial($id)
     {
-        $historial = \App\Models\HistorialConstancia::where('id_constancia', $id)
-                        ->orderBy('fecha', 'DESC')
-                        ->get();
+        $constancia = Constancia::with(['estudiante', 'historial.usuario'])
+            ->findOrFail($id);
 
-        $constancia = Constancia::with('estudiante')->findOrFail($id);
-
-        return view('constancias.historial', compact('historial', 'constancia'));
+        return view('constancias.historial', compact('constancia'));
     }
+    public function verPDF($id)
+    {
+        $constancia = Constancia::findOrFail($id);
+
+        // Ruta donde guardas tus PDFs generados
+        $pdfPath = storage_path("app/pdf/constancia_$id.pdf");
+
+        if (!file_exists($pdfPath)) {
+            return back()->with('error', 'Aún no se ha generado el PDF de esta constancia.');
+        }
+
+        // Registrar historial
+        $this->agregarHistorial($id, "visualizado");
+
+        return response()->file($pdfPath); // <-- ABRE EL PDF DIRECTO
+    }
+
+    public function descargarPDF($id)
+    {
+        $constancia = Constancia::findOrFail($id);
+
+        $pdfPath = storage_path("app/pdf/constancia_$id.pdf");
+
+        if (!file_exists($pdfPath)) {
+            return back()->with('error', 'El PDF aún no ha sido generado.');
+        }
+
+        // Registrar historial
+        $this->agregarHistorial($id, "descargado");
+
+        return response()->download($pdfPath, "Constancia_$id.pdf");
+    }
+
 }
