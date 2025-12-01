@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends Controller
 {
+
     /*
     |--------------------------------------------------------------------------
     | Register Controller
@@ -28,7 +29,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/pendiente';
 
     /**
      * Create a new controller instance.
@@ -67,6 +68,9 @@ class RegisterController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'is_active' => 0,
+            'is_approved' => 0,
         ]);
+        $user->assignRole('usuario');
     }
 }

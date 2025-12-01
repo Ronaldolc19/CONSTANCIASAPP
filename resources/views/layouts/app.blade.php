@@ -124,7 +124,7 @@
             <div class="hero-section">
                 <div class="container text-white">
                     <h1 class="display-3 text-tesvb-red">
-                        Sistema de Constancias de Servicio Social
+                        Sistema de Liberación Constancias de Servicio Social
                     </h1>
                     <p class="lead mb-4 text-tesvb-red">
                         Tecnológico de Estudios Superiores de Valle de Bravo

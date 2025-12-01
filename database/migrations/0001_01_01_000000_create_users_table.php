@@ -19,6 +19,11 @@ return new class extends Migration
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
+
+            // Campos adicionales
+            $table->boolean('is_active')->default(0);   // 0 = inactivo, 1 = activo
+            $table->boolean('is_approved')->default(0); // 0 = pendiente, 1 = aprobado por admin
+            $table->enum('role', ['admin', 'user'])->default('user');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

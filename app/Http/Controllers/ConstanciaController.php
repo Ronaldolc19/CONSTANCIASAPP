@@ -142,13 +142,7 @@ class ConstanciaController extends Controller
             ->orWhere('no_folio', 'LIKE', "%$q%");
         }
 
-        // Filtros
-        if ($request->estado == 'pendientes') {
-            $query->whereNull('fecha_emision');
-        }
-        if ($request->estado == 'emitidas') {
-            $query->whereNotNull('fecha_emision');
-        }
+        
 
         $constancias = $query->orderBy('id_constancia', 'DESC')->get();
 

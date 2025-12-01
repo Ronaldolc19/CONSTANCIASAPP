@@ -3,16 +3,24 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@yield('title','ConstanciasApp')</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>@yield('title', 'Dashboard - Constancias TESVB')</title>
 
     @vite(['resources/css/app.css','resources/js/app.js'])
+    
     <script src="https://kit.fontawesome.com/a2e0e6ad62.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <style>
         /* =======================
-            THEME VARIABLES
+           ESTILOS TESVB Y VARIABLES
         ========================= */
         :root {
+            --tesvb-green: #007F3F;
+            --tesvb-red: #800020;
+            
             --color-bg-light: #f4f5f7;
             --color-bg-dark: #1e1f22;
 
@@ -45,16 +53,19 @@
         }
 
         /* =======================
-            SIDEBAR
+           SIDEBAR
         ========================= */
         #sidebar {
             width: var(--sidebar-width);
             background: var(--sidebar);
             height: 100vh;
             position: fixed;
+            left: 0;
+            top: 0;
             transition: 0.3s ease;
             overflow-y: auto;
-            padding-top: 70px;
+            padding-top: 56px; /* Ajuste para Navbar fixed-top */
+            z-index: 1000;
         }
 
         #sidebar.collapsed {
@@ -68,38 +79,39 @@
             align-items: center;
             cursor: pointer;
             transition: 0.2s;
+            white-space: nowrap;
         }
 
-        #sidebar .nav-link:hover {
-            background: rgba(255,255,255,0.10);
+        #sidebar .nav-link:hover, #sidebar .nav-link.active {
+            background: rgba(255,255,255,0.15);
+            color: #ffffff !important;
         }
-
-        #sidebar .nav-link i {
+        
+        /* Icono principal del enlace */
+        #sidebar .nav-link i.fas { 
             width: 22px;
             font-size: 18px;
+            margin-right: 10px;
         }
 
-        #sidebar.collapsed .nav-link span {
+        #sidebar.collapsed .nav-link span,
+        #sidebar.collapsed .sb-sidenav-menu-heading {
             display: none;
         }
-
-        #sidebar.collapsed .submenu {
-            display: none !important;
-        }
-
-        .sb-sidenav-menu-heading {
-            font-size: 12px;
-            text-transform: uppercase;
-            color: #9ea7ad;
-            padding: 10px 20px;
-            margin-top: 10px;
-        }
-
+        
         /* Submenus */
         .submenu {
             display: none;
-            padding-left: 45px;
+            padding-left: 50px; 
             flex-direction: column;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Íconos de submenú */
+        .submenu .nav-link i.bi {
+            width: 20px;
+            font-size: 16px;
+            margin-right: 10px;
         }
 
         .submenu.show {
@@ -107,20 +119,23 @@
         }
 
         /* =======================
-            NAVBAR SUPERIOR
+           NAVBAR SUPERIOR
         ========================= */
         nav.navbar {
             width: 100%;
             position: fixed;
             z-index: 1000;
+            top: 0;
+            left: 0;
+            /* El left=0 se ajustará con el margin-left del content, pero lo dejamos simple por ahora */
         }
-
+        
         /* =======================
-            CONTENT
+           CONTENT
         ========================= */
         #content {
             margin-left: var(--sidebar-width);
-            padding: 90px 25px 25px 25px;
+            padding: 76px 25px 25px 25px; /* Ajuste de padding-top para el navbar fixed */
             transition: 0.3s ease;
         }
 
@@ -135,90 +150,147 @@
             font-size: 22px;
             margin-right: 20px;
         }
+        
+        /* Estilo para el botón de usuario */
+        .navbar .dropdown-toggle::after {
+            display: none; /* Oculta la flecha por defecto de Bootstrap */
+        }
 
     </style>
 </head>
 
 <body>
 
-    <!-- NAVBAR SUPERIOR -->
-    <nav class="navbar navbar-dark bg-dark px-3">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm fixed-top px-3">
+        
         <button class="btn btn-sm btn-outline-light me-3" id="toggleSidebar">
             <i class="fas fa-bars"></i>
         </button>
 
-        <span class="navbar-brand">ConstanciasApp</span>
+        <span class="navbar-brand fw-bold">
+            <i class="fas fa-chart-line me-2"></i> Dashboard TESVB
+        </span>
 
-        <div class="ms-auto toggle-theme" id="themeToggle">
-            <i class="fas fa-moon"></i>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                
+                {{-- Toggle de Tema --}}
+                <li class="nav-item me-3">
+                    <a class="nav-link toggle-theme" id="themeToggle" role="button">
+                         <i class="fas fa-moon"></i>
+                    </a>
+                </li>
+                
+                {{-- Menú de Usuario Logueado --}}
+                @auth
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center" 
+                       href="#" id="userDropdown" role="button" 
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle me-2 fs-5"></i> 
+                        {{ Auth::user()->name }}
+                    </a>
+                    
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        
+                        
+                        
+                        {{-- Opción de Cerrar Sesión --}}
+                        <li>
+                            <a class="dropdown-item" href="{{ route('logout') }}"
+                               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+                            </a>
+                        </li>
+                        
+                        {{-- Formulario oculto para Logout (POST request) --}}
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                            @csrf
+                        </form>
+                    </ul>
+                </li>
+                @endauth
+            </ul>
         </div>
     </nav>
 
-    <!-- SIDEBAR -->
+
     <div id="sidebar">
         <div class="sb-sidenav-menu">
 
-            <div class="sb-sidenav-menu-heading">Gestión</div>
+            <a class="nav-link active" href="{{ url('/dashboard') }}">
+                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+            </a>
+            
 
-            <!-- CONSTANCIAS -->
             <a class="nav-link" onclick="toggleMenu('m1')">
                 <i class="fas fa-file-alt"></i> <span>Constancias</span>
             </a>
             <div id="m1" class="submenu">
-                <a class="nav-link" href="{{ route('constancias.index') }}">Listado</a>
-                <a class="nav-link" href="{{ route('constancias.create') }}">Nueva</a>
-                <a class="nav-link" href="{{ route('constancias.general') }}">Vista General</a>
+                <a class="nav-link" href="{{ route('constancias.index') }}"><i class="bi bi-list-columns-reverse"></i> Listado</a>
+                <a class="nav-link" href="{{ route('constancias.create') }}"><i class="bi bi-plus-circle-fill"></i> Nueva Solicitud</a>
+                <a class="nav-link" href="{{ route('constancias.general') }}"><i class="bi bi-bar-chart-line-fill"></i> Vista General</a>
             </div>
 
-            <!-- ESTUDIANTES -->
             <a class="nav-link" onclick="toggleMenu('m2')">
                 <i class="fas fa-user-graduate"></i> <span>Estudiantes</span>
             </a>
             <div id="m2" class="submenu">
-                <a class="nav-link" href="{{ route('estudiantes.index') }}">Listado</a>
-                <a class="nav-link" href="{{ route('estudiantes.create') }}">Nuevo</a>
+                <a class="nav-link" href="{{ route('estudiantes.index') }}"><i class="bi bi-people-fill"></i> Listado</a>
+                <a class="nav-link" href="{{ route('estudiantes.create') }}"><i class="bi bi-person-plus-fill"></i> Nuevo</a>
             </div>
 
-            <!-- CARRERAS -->
             <a class="nav-link" onclick="toggleMenu('m3')">
                 <i class="fas fa-book"></i> <span>Carreras</span>
             </a>
             <div id="m3" class="submenu">
-                <a class="nav-link" href="{{ route('carreras.index') }}">Listado</a>
-                <a class="nav-link" href="{{ route('carreras.create') }}">Nueva</a>
+                <a class="nav-link" href="{{ route('carreras.index') }}"><i class="bi bi-journals"></i> Listado</a>
+                <a class="nav-link" href="{{ route('carreras.create') }}"><i class="bi bi-bookmark-plus-fill"></i> Nueva</a>
             </div>
 
-            <!-- EMPRESAS -->
             <a class="nav-link" onclick="toggleMenu('m4')">
                 <i class="fas fa-building"></i> <span>Empresas</span>
             </a>
             <div id="m4" class="submenu">
-                <a class="nav-link" href="{{ route('empresas.index') }}">Listado</a>
-                <a class="nav-link" href="{{ route('empresas.create') }}">Nueva</a>
+                <a class="nav-link" href="{{ route('empresas.index') }}"><i class="bi bi-building-fill-gear"></i> Listado</a>
+                <a class="nav-link" href="{{ route('empresas.create') }}"><i class="bi bi-buildings-fill"></i> Nueva</a>
             </div>
 
-            <!-- PERIODOS -->
             <a class="nav-link" onclick="toggleMenu('m5')">
                 <i class="fas fa-calendar-alt"></i> <span>Periodos</span>
             </a>
             <div id="m5" class="submenu">
-                <a class="nav-link" href="{{ route('periodos.index') }}">Listado</a>
-                <a class="nav-link" href="{{ route('periodos.create') }}">Nuevo</a>
+                <a class="nav-link" href="{{ route('periodos.index') }}"><i class="bi bi-calendar-range-fill"></i> Listado</a>
+                <a class="nav-link" href="{{ route('periodos.create') }}"><i class="bi bi-calendar-plus-fill"></i> Nuevo</a>
             </div>
+            <a class="nav-link" onclick="toggleMenu('m6')">
+                <i class="fas fa-user-graduate"></i> <span>Usuarios</span>
+            </a>
+            <div id="m6" class="submenu">
+                <a class="nav-link" href="{{ route('usuarios.index') }}"><i class="bi bi-calendar-range-fill"></i> Listado</a>
+            </div>
+           
 
         </div>
     </div>
 
-    <!-- CONTENIDO -->
     <div id="content">
         @yield('content')
     </div>
 
     <script>
+        const sidebar = document.getElementById("sidebar");
+        const content = document.getElementById("content");
+        const themeToggle = document.getElementById("themeToggle");
+        const html = document.documentElement;
+
         // -------- Toggle Sidebar --------
         document.getElementById("toggleSidebar").addEventListener("click", () => {
-            document.getElementById("sidebar").classList.toggle("collapsed");
-            document.getElementById("content").classList.toggle("expanded");
+            sidebar.classList.toggle("collapsed");
+            content.classList.toggle("expanded");
         });
 
         // -------- Submenus --------
@@ -227,20 +299,28 @@
         }
 
         // -------- Dark Mode --------
-        const themeToggle = document.getElementById("themeToggle");
         themeToggle.addEventListener("click", () => {
-            const html = document.documentElement;
             const current = html.getAttribute("data-theme");
             const newTheme = current === "light" ? "dark" : "light";
 
             html.setAttribute("data-theme", newTheme);
 
+            // Cambiar icono
             themeToggle.innerHTML =
                 newTheme === "light"
                     ? `<i class="fas fa-moon"></i>`
                     : `<i class="fas fa-sun"></i>`;
         });
-
+        
+        // Inicializar el icono de tema al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+            const current = html.getAttribute("data-theme") || 'light';
+            themeToggle.innerHTML =
+                current === "light"
+                    ? `<i class="fas fa-moon"></i>`
+                    : `<i class="fas fa-sun"></i>`;
+        });
+        
     </script>
 
 </body>
