@@ -65,9 +65,10 @@ Route::middleware(['auth', 'check.approved'])->group(function () {
             [ConstanciaController::class, 'vistaGeneral']
         )->name('constancias.general');
 
-        Route::get('/constancias/generar/numeros',
-            [ConstanciaController::class, 'generarNumeros']
-        )->name('constancias.generar.numeros');
+        // Ruta para la generación automática de folios y registros (AJAX)
+        Route::get('/estudiantes/generar-numeros', 
+            [App\Http\Controllers\EstudianteController::class, 'generarNumeros']
+        )->name('estudiantes.generarNumeros');
 
         // DOCX → PDF
         Route::get('/constancias/{id}/docx', 
@@ -87,6 +88,14 @@ Route::middleware(['auth', 'check.approved'])->group(function () {
         Route::get('/constancias/{id}/descargar',
             [ConstanciaController::class, 'descargarPDF']
         )->name('constancias.descargar');
+
+        Route::get('/dashboard/exportar', 
+            [App\Http\Controllers\DashboardController::class, 'exportAndReset']
+        )->name('constancias.export');
+
+        Route::post('/dashboard/reporte-pdf', [DashboardController::class, 'generarPDF'])->name('dashboard.pdf');
+        Route::post('/dashboard/reiniciar', [DashboardController::class, 'reiniciarCiclo'])->name('dashboard.reiniciar');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     });
 
 });

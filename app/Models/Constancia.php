@@ -8,11 +8,12 @@ class Constancia extends Model
 {
     use HasFactory;
     protected $primaryKey = 'id_constancia';
-    protected $fillable = ['no_registro','no_folio','calificacion','fecha_emision','id_estudiante','id_empresa','id_periodo','pdf_path'];
+    protected $fillable = ['estado', 
+        'pdf_path', 
+        'id_estudiante'];
 
     public function estudiante(){ return $this->belongsTo(Estudiante::class,'id_estudiante','id_estudiante'); }
-    public function empresa(){ return $this->belongsTo(Empresa::class,'id_empresa','id_empresa'); }
-    public function periodo(){ return $this->belongsTo(Periodo::class,'id_periodo','id_periodo'); }
+ 
     public static function generarNumeroRegistro()
     {
         $clavePlantel = "15EIT0013G";

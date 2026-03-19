@@ -13,17 +13,10 @@ return new class extends Migration
     {
         Schema::create('constancias', function (Blueprint $table) {
             $table->id('id_constancia');
-            $table->string('no_registro')->unique();
-            $table->string('no_folio')->unique();
-            $table->string('calificacion');
-            $table->date('fecha_emision');
+            $table->enum('estado', ['emitida', 'pendiente'])->default('pendiente');
+            $table->string('pdf_path')->nullable();
             $table->unsignedBigInteger('id_estudiante');
-            $table->unsignedBigInteger('id_empresa');
-            $table->unsignedBigInteger('id_periodo');
-
             $table->foreign('id_estudiante')->references('id_estudiante')->on('estudiantes')->onDelete('cascade');
-            $table->foreign('id_empresa')->references('id_empresa')->on('empresas')->onDelete('cascade');
-            $table->foreign('id_periodo')->references('id_periodo')->on('periodos')->onDelete('cascade');
             $table->timestamps();
         });
     }

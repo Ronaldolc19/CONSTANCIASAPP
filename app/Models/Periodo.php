@@ -3,6 +3,7 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
 
 class Periodo extends Model
@@ -13,6 +14,11 @@ class Periodo extends Model
 
     public function constancias() {
         return $this->hasMany(Constancia::class, 'id_periodo', 'id_periodo');
+    }
+    public function estudiantes(): HasMany
+    {
+        // Verifica que la llave foránea en la tabla estudiantes se llame 'id_periodo'
+        return $this->hasMany(Estudiante::class, 'id_periodo');
     }
      public function getPeriodoFormateadoAttribute()
     {

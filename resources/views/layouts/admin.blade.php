@@ -5,323 +5,391 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Dashboard - Constancias TESVB')</title>
+    <title>@yield('title', 'TESVB - Sistema de Gestión')</title>
 
     @vite(['resources/css/app.css','resources/js/app.js'])
     
     <script src="https://kit.fontawesome.com/a2e0e6ad62.js" crossorigin="anonymous"></script>
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* =======================
-           ESTILOS TESVB Y VARIABLES
-        ========================= */
         :root {
             --tesvb-green: #007F3F;
-            --tesvb-red: #800020;
-            
-            --color-bg-light: #f4f5f7;
-            --color-bg-dark: #1e1f22;
-
-            --color-sidebar-light: #1a1d20;
-            --color-sidebar-dark: #121212;
-
-            --color-text-light: #2d2d2d;
-            --color-text-dark: #e0e0e0;
-
-            --sidebar-width: 260px;
-            --sidebar-width-collapsed: 80px;
-        }
-
-        [data-theme="light"] {
-            --bg: var(--color-bg-light);
-            --sidebar: var(--color-sidebar-light);
-            --text: var(--color-text-light);
-        }
-
-        [data-theme="dark"] {
-            --bg: var(--color-bg-dark);
-            --sidebar: var(--color-sidebar-dark);
-            --text: var(--color-text-dark);
+            --tesvb-gold: #D4AF37;
+            --sidebar-bg: #0f172a;
+            --sidebar-hover: rgba(255, 255, 255, 0.08);
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 88px;
+            --glass-effect: blur(12px) saturate(180%);
         }
 
         body {
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f4f7fe;
+            color: #1e293b;
+            overflow-x: hidden;
         }
 
-        /* =======================
-           SIDEBAR
-        ========================= */
+        /* --- SIDEBAR MASTER --- */
         #sidebar {
             width: var(--sidebar-width);
-            background: var(--sidebar);
+            background: var(--sidebar-bg);
             height: 100vh;
             position: fixed;
             left: 0;
             top: 0;
-            transition: 0.3s ease;
-            overflow-y: auto;
-            padding-top: 56px; /* Ajuste para Navbar fixed-top */
-            z-index: 1000;
+            z-index: 1060;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.1);
         }
 
         #sidebar.collapsed {
-            width: var(--sidebar-width-collapsed);
+            width: var(--sidebar-collapsed-width);
         }
 
-        #sidebar .nav-link {
-            color: #cfd8dc !important;
-            padding: 14px 18px;
+        /* --- LOGO AREA --- */
+        .sidebar-brand {
+            height: 80px;
             display: flex;
             align-items: center;
-            cursor: pointer;
-            transition: 0.2s;
+            padding: 0 25px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            overflow: hidden;
+        }
+
+        .brand-logo {
+            min-width: 40px;
+            height: 40px;
+            background: var(--tesvb-green);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
+            box-shadow: 0 4px 12px rgba(0, 127, 63, 0.4);
+        }
+
+        /* --- NAVIGATION --- */
+        .sidebar-scroll {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 0;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .nav-header {
+            padding: 15px 30px 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #64748b;
+        }
+
+        .nav-item {
+            position: relative;
+            margin: 4px 15px;
+        }
+
+        .nav-link-custom {
+            display: flex;
+            align-items: center;
+            padding: 12px 18px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 14px;
+            transition: all 0.3s ease;
             white-space: nowrap;
         }
 
-        #sidebar .nav-link:hover, #sidebar .nav-link.active {
-            background: rgba(255,255,255,0.15);
-            color: #ffffff !important;
-        }
-        
-        /* Icono principal del enlace */
-        #sidebar .nav-link i.fas { 
-            width: 22px;
-            font-size: 18px;
-            margin-right: 10px;
+        .nav-link-custom i:first-child {
+            font-size: 1.25rem;
+            margin-right: 15px;
+            min-width: 25px;
+            transition: transform 0.3s ease;
         }
 
-        #sidebar.collapsed .nav-link span,
-        #sidebar.collapsed .sb-sidenav-menu-heading {
-            display: none;
-        }
-        
-        /* Submenus */
-        .submenu {
-            display: none;
-            padding-left: 50px; 
-            flex-direction: column;
-            background-color: rgba(0, 0, 0, 0.2);
-        }
-        
-        /* Íconos de submenú */
-        .submenu .nav-link i.bi {
-            width: 20px;
-            font-size: 16px;
-            margin-right: 10px;
+        .nav-link-custom:hover {
+            background: var(--sidebar-hover);
+            color: #fff;
         }
 
-        .submenu.show {
+        .nav-link-custom.active {
+            background: rgba(0, 127, 63, 0.15);
+            color: var(--tesvb-green);
+            font-weight: 600;
+        }
+
+        .nav-link-custom.active::before {
+            content: '';
+            position: absolute;
+            left: -15px;
+            top: 15%;
+            height: 70%;
+            width: 5px;
+            background: var(--tesvb-green);
+            border-radius: 0 5px 5px 0;
+            box-shadow: 2px 0 10px rgba(0, 127, 63, 0.5);
+        }
+
+        /* --- SUBMENUS --- */
+        .submenu-wrapper {
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            padding-left: 25px;
+        }
+
+        .submenu-wrapper.show {
+            max-height: 500px;
+            margin-top: 5px;
+        }
+
+        .sub-link {
             display: flex;
+            align-items: center;
+            padding: 8px 18px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-radius: 10px;
+            transition: all 0.2s;
         }
 
-        /* =======================
-           NAVBAR SUPERIOR
-        ========================= */
-        nav.navbar {
-            width: 100%;
-            position: fixed;
-            z-index: 1000;
-            top: 0;
-            left: 0;
-            /* El left=0 se ajustará con el margin-left del content, pero lo dejamos simple por ahora */
+        .sub-link:hover { color: #fff; }
+        .sub-link::before {
+            content: "•";
+            margin-right: 10px;
+            opacity: 0.5;
         }
-        
-        /* =======================
-           CONTENT
-        ========================= */
-        #content {
+
+        /* --- MAIN CONTENT AREA --- */
+        #content-wrapper {
             margin-left: var(--sidebar-width);
-            padding: 76px 25px 25px 25px; /* Ajuste de padding-top para el navbar fixed */
-            transition: 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        #content.expanded {
-            margin-left: var(--sidebar-width-collapsed);
+        #content-wrapper.expanded { margin-left: var(--sidebar-collapsed-width); }
+
+        .top-navbar {
+            height: 80px;
+            background: rgba(244, 247, 254, 0.8) !important;
+            backdrop-filter: var(--glass-effect);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        /* DARK/LIGHT TOGGLE */
-        .toggle-theme {
+        .main-container {
+            padding: 30px 40px;
+            flex-grow: 1;
+        }
+
+        /* --- COLLAPSE LOGIC --- */
+        #sidebar.collapsed .nav-text, 
+        #sidebar.collapsed .nav-header,
+        #sidebar.collapsed .chevron-icon,
+        #sidebar.collapsed .brand-name {
+            display: none;
+        }
+
+        /* --- BUTTONS & UTILS --- */
+        .btn-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            color: var(--sidebar-bg);
             cursor: pointer;
-            color: white;
-            font-size: 22px;
-            margin-right: 20px;
+            transition: 0.3s;
         }
-        
-        /* Estilo para el botón de usuario */
-        .navbar .dropdown-toggle::after {
-            display: none; /* Oculta la flecha por defecto de Bootstrap */
-        }
+        .btn-toggle:hover { background: var(--tesvb-green); color: #fff; }
 
+        .user-pill {
+            background: #fff;
+            padding: 6px 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            display: flex;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 
 <body>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <aside id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <span class="brand-name fw-bold fs-5 mb-0">TESVB <span class="text-success">Admin</span></span>
+        </div>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm fixed-top px-3">
-        
-        <button class="btn btn-sm btn-outline-light me-3" id="toggleSidebar">
-            <i class="fas fa-bars"></i>
-        </button>
-
-        <span class="navbar-brand fw-bold">
-            <i class="fas fa-chart-line me-2"></i> Dashboard TESVB
-        </span>
-
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="sidebar-scroll">
+            <div class="nav-header">Principal</div>
             
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
-                
-                {{-- Toggle de Tema --}}
-                <li class="nav-item me-3">
-                    <a class="nav-link toggle-theme" id="themeToggle" role="button">
-                         <i class="fas fa-moon"></i>
-                    </a>
-                </li>
-                
-                {{-- Menú de Usuario Logueado --}}
-                @auth
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center" 
-                       href="#" id="userDropdown" role="button" 
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle me-2 fs-5"></i> 
-                        {{ Auth::user()->name }}
-                    </a>
+            <div class="nav-item">
+                <a href="{{ url('/dashboard') }}" class="nav-link-custom {{ request()->is('dashboard') ? 'active' : '' }}">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span class="nav-text">Panel Control</span>
+                </a>
+            </div>
+
+            <div class="nav-header">Gestión Escolar</div>
+
+            <div class="nav-item">
+                <a href="javascript:void(0)" class="nav-link-custom" onclick="toggleSubmenu('sub-constancias')">
+                    <i class="bi bi-file-earmark-text-fill"></i>
+                    <span class="nav-text">Constancias</span>
+                    <i class="bi bi-chevron-down ms-auto chevron-icon fs-xs"></i>
+                </a>
+                <div id="sub-constancias" class="submenu-wrapper">
                     
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        
-                        
-                        
-                        {{-- Opción de Cerrar Sesión --}}
+                    <a href="{{ route('constancias.general') }}" class="sub-link">Panel General</a>
+                </div>
+            </div>
+
+            <div class="nav-item">
+                <a href="javascript:void(0)" class="nav-link-custom" onclick="toggleSubmenu('sub-estudiantes')">
+                    <i class="bi bi-people-fill"></i>
+                    <span class="nav-text">Estudiantes</span>
+                    <i class="bi bi-chevron-down ms-auto chevron-icon fs-xs"></i>
+                </a>
+                <div id="sub-estudiantes" class="submenu-wrapper">
+                    <a href="{{ route('estudiantes.index') }}" class="sub-link">Ver Alumnos</a>
+                    <a href="{{ route('estudiantes.create') }}" class="sub-link">Registrar Nuevo</a>
+                </div>
+            </div>
+
+            <div class="nav-header">Configuración</div>
+
+            <div class="nav-item">
+                <a href="{{ route('carreras.index') }}" class="nav-link-custom {{ request()->is('carreras*') ? 'active' : '' }}">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                    <span class="nav-text">Carreras</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="{{ route('empresas.index') }}" class="nav-link-custom {{ request()->is('empresas*') ? 'active' : '' }}">
+                    <i class="bi bi-building-fill"></i>
+                    <span class="nav-text">Empresas</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="{{ route('periodos.index') }}" class="nav-link-custom {{ request()->is('periodos*') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-event-fill"></i>
+                    <span class="nav-text">Periodos</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <main id="content-wrapper">
+        <header class="top-navbar">
+            <button class="btn-toggle me-4" id="btn-collapse">
+                <i class="fas fa-bars-staggered"></i>
+            </button>
+
+            <h5 class="mb-0 fw-bold d-none d-md-block">@yield('title')</h5>
+
+            <div class="ms-auto d-flex align-items-center">
+                @auth
+                <div class="dropdown">
+                    <div class="user-pill dropdown-toggle cursor-pointer" data-bs-toggle="dropdown">
+                        <img src="https://ui-avatars.com/api/?name={{ Auth::user()->name }}&background=007F3F&color=fff" 
+                             class="rounded-circle me-2" width="30" height="30">
+                        <span class="small fw-semibold d-none d-sm-inline">{{ Auth::user()->name }}</span>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 p-2">
+                        <li><a class="dropdown-item rounded-3" href="#"><i class="bi bi-person me-2"></i> Mi Perfil</a></li>
+                        <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item" href="{{ route('logout') }}"
+                            <a class="dropdown-item rounded-3 text-danger" href="{{ route('logout') }}"
                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                 <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
                             </a>
                         </li>
-                        
-                        {{-- Formulario oculto para Logout (POST request) --}}
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                            @csrf
-                        </form>
                     </ul>
-                </li>
+                </div>
                 @endauth
-            </ul>
-        </div>
-    </nav>
-
-
-    <div id="sidebar">
-        <div class="sb-sidenav-menu">
-
-            <a class="nav-link active" href="{{ url('/dashboard') }}">
-                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
-            </a>
-            
-
-            <a class="nav-link" onclick="toggleMenu('m1')">
-                <i class="fas fa-file-alt"></i> <span>Constancias</span>
-            </a>
-            <div id="m1" class="submenu">
-                <a class="nav-link" href="{{ route('constancias.index') }}"><i class="bi bi-list-columns-reverse"></i> Listado</a>
-                <a class="nav-link" href="{{ route('constancias.create') }}"><i class="bi bi-plus-circle-fill"></i> Nueva Solicitud</a>
-                <a class="nav-link" href="{{ route('constancias.general') }}"><i class="bi bi-bar-chart-line-fill"></i> Vista General</a>
             </div>
+        </header>
 
-            <a class="nav-link" onclick="toggleMenu('m2')">
-                <i class="fas fa-user-graduate"></i> <span>Estudiantes</span>
-            </a>
-            <div id="m2" class="submenu">
-                <a class="nav-link" href="{{ route('estudiantes.index') }}"><i class="bi bi-people-fill"></i> Listado</a>
-                <a class="nav-link" href="{{ route('estudiantes.create') }}"><i class="bi bi-person-plus-fill"></i> Nuevo</a>
-            </div>
+        <section class="main-container">
+            @yield('content')
+        </section>
+    </main>
 
-            <a class="nav-link" onclick="toggleMenu('m3')">
-                <i class="fas fa-book"></i> <span>Carreras</span>
-            </a>
-            <div id="m3" class="submenu">
-                <a class="nav-link" href="{{ route('carreras.index') }}"><i class="bi bi-journals"></i> Listado</a>
-                <a class="nav-link" href="{{ route('carreras.create') }}"><i class="bi bi-bookmark-plus-fill"></i> Nueva</a>
-            </div>
+    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
 
-            <a class="nav-link" onclick="toggleMenu('m4')">
-                <i class="fas fa-building"></i> <span>Empresas</span>
-            </a>
-            <div id="m4" class="submenu">
-                <a class="nav-link" href="{{ route('empresas.index') }}"><i class="bi bi-building-fill-gear"></i> Listado</a>
-                <a class="nav-link" href="{{ route('empresas.create') }}"><i class="bi bi-buildings-fill"></i> Nueva</a>
-            </div>
-
-            <a class="nav-link" onclick="toggleMenu('m5')">
-                <i class="fas fa-calendar-alt"></i> <span>Periodos</span>
-            </a>
-            <div id="m5" class="submenu">
-                <a class="nav-link" href="{{ route('periodos.index') }}"><i class="bi bi-calendar-range-fill"></i> Listado</a>
-                <a class="nav-link" href="{{ route('periodos.create') }}"><i class="bi bi-calendar-plus-fill"></i> Nuevo</a>
-            </div>
-            <a class="nav-link" onclick="toggleMenu('m6')">
-                <i class="fas fa-user-graduate"></i> <span>Usuarios</span>
-            </a>
-            <div id="m6" class="submenu">
-                <a class="nav-link" href="{{ route('usuarios.index') }}"><i class="bi bi-calendar-range-fill"></i> Listado</a>
-            </div>
-           
-
-        </div>
-    </div>
-
-    <div id="content">
-        @yield('content')
-    </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const sidebar = document.getElementById("sidebar");
-        const content = document.getElementById("content");
-        const themeToggle = document.getElementById("themeToggle");
-        const html = document.documentElement;
+        const sidebar = document.getElementById('sidebar');
+        const wrapper = document.getElementById('content-wrapper');
+        const btnCollapse = document.getElementById('btn-collapse');
 
-        // -------- Toggle Sidebar --------
-        document.getElementById("toggleSidebar").addEventListener("click", () => {
-            sidebar.classList.toggle("collapsed");
-            content.classList.toggle("expanded");
+        // Toggle Sidebar
+        btnCollapse.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            wrapper.classList.toggle('expanded');
         });
 
-        // -------- Submenus --------
-        function toggleMenu(id) {
-            document.getElementById(id).classList.toggle("show");
+        // Toggle Submenus
+        function toggleSubmenu(id) {
+            const menu = document.getElementById(id);
+            const allMenus = document.querySelectorAll('.submenu-wrapper');
+            
+            allMenus.forEach(m => {
+                if(m.id !== id) m.classList.remove('show');
+            });
+
+            menu.classList.toggle('show');
+            
+            // Si el sidebar está colapsado, lo expandimos al abrir un submenu
+            if(sidebar.classList.contains('collapsed')) {
+                sidebar.classList.remove('collapsed');
+                wrapper.classList.remove('expanded');
+            }
         }
 
-        // -------- Dark Mode --------
-        themeToggle.addEventListener("click", () => {
-            const current = html.getAttribute("data-theme");
-            const newTheme = current === "light" ? "dark" : "light";
-
-            html.setAttribute("data-theme", newTheme);
-
-            // Cambiar icono
-            themeToggle.innerHTML =
-                newTheme === "light"
-                    ? `<i class="fas fa-moon"></i>`
-                    : `<i class="fas fa-sun"></i>`;
-        });
-        
-        // Inicializar el icono de tema al cargar
+        // Auto-activar submenús si la ruta coincide
         document.addEventListener('DOMContentLoaded', () => {
-            const current = html.getAttribute("data-theme") || 'light';
-            themeToggle.innerHTML =
-                current === "light"
-                    ? `<i class="fas fa-moon"></i>`
-                    : `<i class="fas fa-sun"></i>`;
+            const currentPath = window.location.pathname;
+            const sublinks = document.querySelectorAll('.sub-link');
+            sublinks.forEach(link => {
+                if(currentPath.includes(link.getAttribute('href'))) {
+                    link.closest('.submenu-wrapper').classList.add('show');
+                    link.style.color = '#fff';
+                    link.style.fontWeight = 'bold';
+                }
+            });
         });
-        
     </script>
-
+    @stack('scripts')
 </body>
 </html>

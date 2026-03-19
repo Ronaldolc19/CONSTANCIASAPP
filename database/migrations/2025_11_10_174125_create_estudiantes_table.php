@@ -19,7 +19,13 @@ return new class extends Migration
             $table->string('genero');
             $table->string('no_cuenta')->unique();
             $table->unsignedBigInteger('id_carrera');
-            $table->foreign('id_carrera')->references('id_carrera')->on('carreras')->onDelete('cascade');
+            $table->unsignedBigInteger('id_empresa')->nullable();
+            $table->unsignedBigInteger('id_periodo')->nullable();
+            $table->string('no_registro')->unique();
+            $table->string('no_folio')->unique();
+            $table->string('calificacion')->nullable();
+            $table->date('fecha_emision')->nullable();
+            
             $table->timestamps();
         });
     }

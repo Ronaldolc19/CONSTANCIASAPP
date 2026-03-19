@@ -14,5 +14,5 @@ class PeriodoController extends Controller
     public function show(Periodo $periodo){ return view('periodos.show', compact('periodo')); }
     public function edit(Periodo $periodo){ return view('periodos.edit', compact('periodo')); }
     public function update(StorePeriodoRequest $request, Periodo $periodo){ $periodo->update($request->validated()); return redirect()->route('periodos.index')->with('success','Periodo actualizado'); }
-    public function destroy(Periodo $periodo){ $periodo->delete(); return back()->with('success','Periodo eliminado'); }
+    public function destroy(Periodo $periodo){ $periodo->delete(); return redirect()->route('periodos.index')->with('success', 'Periodo eliminado correctamente'); }
 }
