@@ -77,46 +77,46 @@ class ConstanciaController extends Controller
 
     public function edit($id)
     {
-        $constancia = Constancia::with('estudiante')->findOrFail($id);
-        
-        $estudiantes = Estudiante::orderBy('nombre')->get();
-        $empresas = Empresa::orderBy('nombre')->get();
-        $periodos = Periodo::orderBy('fecha_inicio')->get();
+        // 1. Obtener la constancia con sus relaciones
+        $constancia = Constancia::with('estudiante.empresa', 'estudiante.periodo')->findOrFail($id);
 
-        return view('constancias.edit', compact('constancia', 'estudiantes', 'empresas', 'periodos'));
+        // 2. Obtener TODAS las opciones para los selectores
+        $carreras = Carrera::all(); 
+        $periodos = Periodo::all();
+        $empresas = Empresa::all();
+
+        // 3. Pasar TODO a la vista
+        return view('constancias.edit', compact('constancia', 'carreras', 'periodos', 'empresas'));
     }
 
     public function update(Request $request, $id)
     {
         $constancia = Constancia::findOrFail($id);
-        
-        $request->validate([
-            'id_estudiante' => 'required',
-            'id_empresa' => 'required',
-            'id_periodo' => 'required',
-            'calificacion' => 'required',
-            'estado' => 'required|in:emitida,pendiente',
-            'no_registro' => 'required|unique:estudiantes,no_registro,' . $constancia->id_estudiante . ',id_estudiante',
-            'no_folio' => 'required|unique:estudiantes,no_folio,' . $constancia->id_estudiante . ',id_estudiante',
-        ]);
-
-        // 1. Actualizamos la Constancia (estado)
-        $constancia->update([
-            'estado' => $request->estado,
-        ]);
-
-        // 2. Actualizamos al Estudiante (sus atributos de residencia/certificación)
         $estudiante = Estudiante::findOrFail($constancia->id_estudiante);
-        $estudiante->update([
-            'id_empresa' => $request->id_empresa,
-            'id_periodo' => $request->id_periodo,
-            'no_registro' => $request->no_registro,
-            'no_folio' => $request->no_folio,
-            'calificacion' => $request->calificacion,
-            'fecha_emision' => $request->fecha_emision ?: $estudiante->fecha_emision
+
+        $request->validate([
+            'nombre'        => 'required|string|max:255',
+            'ap'            => 'required|string|max:255',
+            'no_cuenta'     => 'required|unique:estudiantes,no_cuenta,' . $estudiante->id_estudiante . ',id_estudiante',
+            'id_carrera'    => 'required|exists:carreras,id_carrera',
+            'id_empresa'    => 'required|exists:empresas,id_empresa',
+            'id_periodo'    => 'required|exists:periodos,id_periodo',
+            'calificacion'  => 'required|numeric',
+            'no_registro'   => 'required|unique:estudiantes,no_registro,' . $estudiante->id_estudiante . ',id_estudiante',
+            'no_folio'      => 'required|unique:estudiantes,no_folio,' . $estudiante->id_estudiante . ',id_estudiante',
         ]);
 
-        return redirect()->route('constancias.index')->with('success', 'Datos actualizados correctamente.');
+        // Actualización masiva de todos los campos del estudiante
+        $estudiante->update($request->only([
+            'nombre', 'ap', 'am', 'genero', 'no_cuenta', 
+            'id_carrera', 'id_empresa', 'id_periodo', 
+            'calificacion', 'no_registro', 'no_folio', 'fecha_emision'
+        ]));
+
+        // Sincronizamos la constancia (podrías forzar el estado a 'emitida' aquí si quisieras)
+        $constancia->touch(); 
+
+        return redirect()->route('constancias.general')->with('success', 'Expediente actualizado integralmente.');
     }
 
     public function show($id)
@@ -233,15 +233,24 @@ public function generarDOCX($id)
         // Lógica de Género
         $esFemenino = (strtolower($estudiante->genero) === 'f');
 
+        // FORMATEO DE FECHA PERSONALIZADO: "los 04 días del mes de julio de 2025"
+        $fechaCarbon = \Carbon\Carbon::parse($estudiante->fecha_emision ?? now())->locale('es');
+        $dia = $fechaCarbon->format('d'); // Mantiene el cero inicial (04)
+        $mes = $fechaCarbon->translatedFormat('F'); // Nombre del mes completo
+        $anio = $fechaCarbon->format('Y');
+        $fechaFormateadaParaDoc = "a los {$dia} días del mes de {$mes} de {$anio}";
+
         $variables = [
             '{{NOMBRE}}'        => mb_strtoupper($estudiante->nombre . ' ' . $estudiante->ap . ' ' . $estudiante->am, 'UTF-8'),
             '{{ALU}}'           => $esFemenino ? 'Alumna' : 'Alumno',
             '{{ADSCR}}'         => $esFemenino ? 'adscrita' : 'adscrito',
-            '{{CARRERA}}'       => mb_strtoupper($estudiante->carrera->nombre ?? '', 'UTF-8'),
+            // Cambiado: Ya no usa mb_strtoupper para respetar la escritura original
+            '{{CARRERA}}'       => $estudiante->carrera->nombre ?? '',
             '{{NO_CUENTA}}'     => $estudiante->no_cuenta,
-            '{{EMPRESA}}'       => mb_strtoupper($estudiante->empresa->nombre ?? '', 'UTF-8'),
+            // Cambiado: Ya no usa mb_strtoupper para respetar la escritura original
+            '{{EMPRESA}}'       => $estudiante->empresa->nombre ?? '',
             '{{PERIODO}}'       => $estudiante->periodo->periodo_formateado ?? '',
-            '{{FECHA_EMISION}}' => \Carbon\Carbon::parse($estudiante->fecha_emision ?? now())->locale('es')->translatedFormat('d \d\e F \d\e Y'),
+            '{{FECHA_EMISION}}' => $fechaFormateadaParaDoc,
             '{{NO_REGISTRO}}'   => $estudiante->no_registro,
         ];
 
@@ -288,7 +297,6 @@ public function generarDOCX($id)
         return "Error crítico: " . $e->getMessage();
     }
 }
-
 
 
     private function agregarHistorial($id_constancia, $accion)

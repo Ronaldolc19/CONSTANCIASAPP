@@ -16,40 +16,45 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class DashboardController extends Controller
 {
-   public function index()
+    public function index()
     {
-        // 1. Métricas Base (Solo lo NO archivado para que el Dashboard se limpie al reiniciar)
-        $totalConstancias = Constancia::where('archivado', false)->count();
+        // 1. KPIs HISTÓRICOS (Solo las que ya fueron EMITIDAS en toda la historia)
+        $totalConstancias = Constancia::where('estado', 'emitida')->count();
         $totalEstudiantes = Estudiante::count();
-        $totalCarreras = Carrera::count();
         $totalEmpresas = Empresa::count();
         $totalPeriodos = Periodo::count();
 
-        // 2. Datos Períodos (Etiquetas por fecha)
+        // 2. DATOS CICLO ACTUAL (Solo EMITIDAS y NO archivadas)
         $reportePeriodos = Periodo::withCount(['estudiantes as total' => function($q) {
-            $q->whereHas('constancias', function($c) { $c->where('archivado', false); });
+            $q->whereHas('constancias', function($c) { 
+                $c->where('archivado', false)->where('estado', 'emitida'); 
+            });
         }])->having('total', '>', 0)->get();
 
         $periodosLabels = $reportePeriodos->map(fn($p) => 
-            \Carbon\Carbon::parse($p->fecha_inicio)->format('d/m/y') . ' - ' . \Carbon\Carbon::parse($p->fecha_fin)->format('d/m/y')
+            Carbon::parse($p->fecha_inicio)->format('d/m/y')
         )->toArray();
 
-        // 3. Datos Carreras (Filtrado por no archivado)
+        // Filtro por Carrera: Solo cuenta constancias emitidas y activas
         $reporteCarreras = Carrera::whereHas('estudiantes.constancias', function($q){
-            $q->where('archivado', false);
+            $q->where('archivado', false)->where('estado', 'emitida');
         })->withCount(['estudiantes as constancias_count' => function($q) {
-            $q->whereHas('constancias', function($c) { $c->where('archivado', false); });
+            $q->whereHas('constancias', function($c) { 
+                $c->where('archivado', false)->where('estado', 'emitida'); 
+            });
         }])->get();
 
-        // 4. Datos Empresas (Top 10 usadas actualmente)
+        // Filtro por Empresa: Solo cuenta alumnos con constancia emitida
         $reporteEmpresas = Empresa::whereHas('estudiantes.constancias', function($q){
-            $q->where('archivado', false);
+            $q->where('archivado', false)->where('estado', 'emitida');
         })->withCount(['estudiantes as total' => function($q) {
-            $q->whereHas('constancias', function($c) { $c->where('archivado', false); });
+            $q->whereHas('constancias', function($c) { 
+                $c->where('archivado', false)->where('estado', 'emitida'); 
+            });
         }])->orderBy('total', 'desc')->take(10)->get();
 
         return view('dashboard.index', compact(
-            'totalConstancias', 'totalEstudiantes', 'totalCarreras', 'totalEmpresas', 'totalPeriodos'
+            'totalConstancias', 'totalEstudiantes', 'totalEmpresas', 'totalPeriodos'
         ) + [
             'periodosLabels' => $periodosLabels, 
             'periodosData' => $reportePeriodos->pluck('total')->toArray(),
@@ -61,41 +66,48 @@ class DashboardController extends Controller
     }
 
     public function generarPDF(Request $request)
-{
-    // Datos para las tablas
-    $totalConstancias = Constancia::where('archivado', false)->count();
-    
-    $reporteCarreras = Carrera::whereHas('estudiantes.constancias', function($q){
-        $q->where('archivado', false);
-    })->withCount(['estudiantes as constancias_count' => function($q) {
-        $q->whereHas('constancias', function($c) { $c->where('archivado', false); });
-    }])->get();
+    {
+        // El PDF solo debe mostrar lo EMITIDO y ACTIVO
+        $totalEmitidasActivas = Constancia::where('archivado', false)
+                                          ->where('estado', 'emitida')
+                                          ->count();
+        
+        $reporteCarreras = Carrera::whereHas('estudiantes.constancias', function($q){
+            $q->where('archivado', false)->where('estado', 'emitida');
+        })->withCount(['estudiantes as constancias_count' => function($q) {
+            $q->whereHas('constancias', function($c) { 
+                $c->where('archivado', false)->where('estado', 'emitida'); 
+            });
+        }])->get();
 
-    // Nuevo: Datos de las Top 10 Empresas para la tabla del PDF
-    $reporteEmpresas = Empresa::whereHas('estudiantes.constancias', function($q){
-        $q->where('archivado', false);
-    })->withCount(['estudiantes as total' => function($q) {
-        $q->whereHas('constancias', function($c) { $c->where('archivado', false); });
-    }])->orderBy('total', 'desc')->take(10)->get();
+        $reporteEmpresas = Empresa::whereHas('estudiantes.constancias', function($q){
+            $q->where('archivado', false)->where('estado', 'emitida');
+        })->withCount(['estudiantes as total' => function($q) {
+            $q->whereHas('constancias', function($c) { 
+                $c->where('archivado', false)->where('estado', 'emitida'); 
+            });
+        }])->orderBy('total', 'desc')->take(10)->get();
 
-    $data = [
-        'totalConstancias' => $totalConstancias,
-        'reporteCarreras'  => $reporteCarreras,
-        'reporteEmpresas'  => $reporteEmpresas,
-        'imgPeriodos'      => $request->input('imgPeriodos'),
-        'imgCarreras'      => $request->input('imgCarreras'),
-        'imgEmpresas'      => $request->input('imgEmpresas'), // Nueva imagen
-        'fecha'            => now()->format('d/m/Y H:i A')
-    ];
+        $data = [
+            'totalConstancias' => $totalEmitidasActivas,
+            'reporteCarreras'  => $reporteCarreras,
+            'reporteEmpresas'  => $reporteEmpresas,
+            'imgPeriodos'      => $request->input('imgPeriodos'),
+            'imgCarreras'      => $request->input('imgCarreras'),
+            'imgEmpresas'      => $request->input('imgEmpresas'),
+            'fecha'            => now()->translatedFormat('d \d\e F, Y')
+        ];
 
-    $pdf = Pdf::loadView('reports.dashboard_pdf', $data);
-    return $pdf->download('Informe_Tecnico_Completo.pdf');
-}
+        $nombreArchivo = 'Informe_Tecnico_' . now()->format('Y_m_d') . '.pdf';
+        return Pdf::loadView('reports.dashboard_pdf', $data)->download($nombreArchivo);
+    }
 
     public function reiniciarCiclo()
     {
-        // Archivamos todas las constancias activas
+        // Solo afecta a las gráficas porque las "mueve" al historial (archivado = true)
+        // Pero no borra los registros de la base de datos, por eso las Cards siguen sumando.
         Constancia::where('archivado', false)->update(['archivado' => true]);
-        return redirect()->route('dashboard.index')->with('success', 'Ciclo reiniciado. Los datos se han movido al histórico.');
+        
+        return redirect()->route('dashboard.index')->with('success', 'Ciclo finalizado: Las gráficas se han reiniciado, pero el historial global se mantiene intacto.');
     }
 }

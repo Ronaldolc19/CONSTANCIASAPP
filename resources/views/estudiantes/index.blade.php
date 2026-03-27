@@ -131,7 +131,7 @@
                                 <form action="{{ route('estudiantes.destroy', $est->id_estudiante) }}" method="POST" class="d-inline form-eliminar">
                                     @csrf 
                                     @method('DELETE')
-                                    <button type="button" class="btn btn-white btn-sm border btn-confirmar-borrado" 
+                                    <button type="button" class="btn btn-white btn-sm border btn-eliminar" 
                                             data-nombre="{{ $est->nombre }} {{ $est->ap }}">
                                         <i class="bi bi-trash3 text-danger"></i>
                                     </button>
@@ -184,6 +184,33 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // Tu script original de confirmación se mantiene igual
+    document.addEventListener('DOMContentLoaded', function() {
+        // Seleccionamos todos los botones con la clase .btn-eliminar
+        const botonesEliminar = document.querySelectorAll('.btn-eliminar');
+
+        botonesEliminar.forEach(boton => {
+            boton.addEventListener('click', function(e) {
+                const nombreEstudiante = this.getAttribute('data-nombre');
+                const formulario = this.closest('form'); // Busca el form más cercano
+
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `Vas a eliminar el expediente de: ${nombreEstudiante}. Esta acción no se puede deshacer.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#800020', // Guinda TESVB
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Enviamos el formulario manualmente
+                        formulario.submit();
+                    }
+                });
+            });
+        });
+    });
 </script>
 @endpush

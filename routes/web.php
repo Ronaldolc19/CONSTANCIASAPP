@@ -33,7 +33,10 @@ Route::middleware(['auth', 'check.approved'])->group(function () {
     // 🔹 RUTAS SOLO PARA ADMIN
     // ---------------------------------------------------------
     Route::middleware(['role:admin'])->group(function () {
-
+        // Ruta para la generación automática de folios y registros (AJAX)
+        Route::get('/estudiantes/generar-numeros', 
+            [App\Http\Controllers\EstudianteController::class, 'generarNumeros']
+        )->name('estudiantes.generarNumeros');
         // CRUDs
         Route::resource('carreras', CarreraController::class);
         Route::resource('estudiantes', EstudianteController::class);
@@ -64,11 +67,6 @@ Route::middleware(['auth', 'check.approved'])->group(function () {
         Route::get('/constancias-general', 
             [ConstanciaController::class, 'vistaGeneral']
         )->name('constancias.general');
-
-        // Ruta para la generación automática de folios y registros (AJAX)
-        Route::get('/estudiantes/generar-numeros', 
-            [App\Http\Controllers\EstudianteController::class, 'generarNumeros']
-        )->name('estudiantes.generarNumeros');
 
         // DOCX → PDF
         Route::get('/constancias/{id}/docx', 

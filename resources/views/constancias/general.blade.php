@@ -11,8 +11,7 @@
             <h3 class="fw-bold mb-0" style="color: #007F3F;">Control de Constancias</h3>
             <p class="text-muted small mb-0">El estado cambia a <b class="text-success">Emitida</b> al generar el documento.</p>
         </div>
-        {{-- Redirección al flujo de nuevo estudiante --}}
-        <a href="{{ route('estudiantes.create') }}" class="btn btn-success shadow-sm fw-bold">
+        <a href="{{ route('estudiantes.create') }}" class="btn btn-success shadow-sm fw-bold rounded-pill px-4">
             <i class="bi bi-plus-circle me-2"></i> Nueva Constancia
         </a>
     </div>
@@ -20,7 +19,7 @@
     {{-- CARDS INFORMATIVAS COMPACTAS --}}
     <div class="row g-2 mb-4">
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm" style="border-radius: 10px; border-left: 4px solid #007F3F !important;">
+            <div class="card border-0 shadow-sm rounded-3 border-start border-4 border-success">
                 <div class="card-body py-2 px-3">
                     <span class="text-muted small fw-bold text-uppercase">Total</span>
                     <h4 class="fw-bold mb-0">{{ $constancias->total() }}</h4>
@@ -28,7 +27,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm" style="border-radius: 10px; border-left: 4px solid #198754 !important;">
+            <div class="card border-0 shadow-sm rounded-3 border-start border-4 border-success">
                 <div class="card-body py-2 px-3">
                     <span class="text-muted small fw-bold text-uppercase">Emitidas</span>
                     <h4 class="fw-bold mb-0 text-success">
@@ -38,7 +37,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm" style="border-radius: 10px; border-left: 4px solid #ffc107 !important;">
+            <div class="card border-0 shadow-sm rounded-3 border-start border-4 border-warning">
                 <div class="card-body py-2 px-3">
                     <span class="text-muted small fw-bold text-uppercase">Pendientes</span>
                     <h4 class="fw-bold mb-0 text-warning">
@@ -49,8 +48,8 @@
         </div>
     </div>
 
-    {{-- SECCIÓN DE FILTROS COMPLETOS --}}
-    <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
+    {{-- SECCIÓN DE FILTROS --}}
+    <div class="card border-0 shadow-sm mb-4 rounded-4">
         <div class="card-body">
             <form action="{{ route('constancias.general') }}" method="GET" class="row g-2">
                 <div class="col-md-3">
@@ -96,8 +95,8 @@
                 </div>
 
                 <div class="col-md-3 d-flex align-items-end gap-1">
-                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">Filtrar</button>
-                    <a href="{{ route('constancias.general') }}" class="btn btn-light btn-sm border w-50" title="Limpiar">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold rounded-3">Filtrar</button>
+                    <a href="{{ route('constancias.general') }}" class="btn btn-light btn-sm border w-50 rounded-3" title="Limpiar">
                         <i class="bi bi-arrow-clockwise"></i>
                     </a>
                 </div>
@@ -106,7 +105,7 @@
     </div>
 
     {{-- TABLA --}}
-    <div class="card border-0 shadow-sm" style="border-radius: 15px; overflow: hidden;">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-dark text-white">
@@ -155,7 +154,7 @@
 
                         <td class="text-center pe-3">
                             <div class="btn-group shadow-sm border rounded bg-white">
-                                {{-- Generar Documento (Icono PDF Rojo Restaurado) --}}
+                                {{-- Generar Documento --}}
                                 @if($c->estado !== 'emitida')
                                     <a href="{{ route('constancias.docx', $c->id_constancia) }}" 
                                     class="btn btn-white btn-sm py-2 px-2 border-end" title="Generar Documento">
@@ -179,11 +178,14 @@
                                     <i class="bi bi-clock-history text-primary"></i>
                                 </a>
 
-                                <form action="{{ route('constancias.destroy', $c->id_constancia) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar registro?')">
+                                {{-- Botón de Eliminar Corregido --}}
+                                <button type="button" class="btn btn-white btn-sm py-2 px-2" 
+                                        onclick="deleteExpediente({{ $c->id_constancia }}, '{{ $c->estudiante->nombre }} {{ $c->estudiante->ap }}')">
+                                    <i class="bi bi-trash3-fill text-danger"></i>
+                                </button>
+
+                                <form id="delete-form-{{ $c->id_constancia }}" action="{{ route('constancias.destroy', $c->id_constancia) }}" method="POST" style="display: none;">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-white btn-sm py-2 px-2" title="Eliminar">
-                                        <i class="bi bi-trash3-fill text-danger"></i>
-                                    </button>
                                 </form>
                             </div>
                         </td>
@@ -201,7 +203,7 @@
         </div>
     </div>
 
-    {{-- PAGINACIÓN CON ESTILO AZUL BOOTSTRAP --}}
+    {{-- PAGINACIÓN --}}
     <div class="mt-4 d-flex justify-content-center custom-pagination">
         @if ($constancias instanceof \Illuminate\Pagination\LengthAwarePaginator)
             {{ $constancias->appends(request()->query())->links('pagination::bootstrap-5') }}
@@ -209,27 +211,55 @@
     </div>
 </div>
 
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function deleteExpediente(id, nombre) {
+        Swal.fire({
+            title: '<span style="color: #007F3F">¿Eliminar registro?</span>',
+            html: `¿Estás seguro de borrar el expediente de: <br><b>${nombre}</b>?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-trash me-2"></i> Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'btn btn-danger px-4 mx-2 rounded-pill',
+                cancelButton: 'btn btn-light border px-4 mx-2 rounded-pill'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('delete-form-' + id).submit();
+            }
+        });
+    }
+
+    // Toast para mensajes de éxito (Laravel session)
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: '¡Hecho!',
+            text: "{{ session('success') }}",
+            confirmButtonColor: '#007F3F',
+            timer: 3000
+        });
+    @endif
+</script>
+@endpush
+
 <style>
     .btn-white { background: #fff; border: none; transition: 0.2s; }
-    .btn-white:hover { background: #f8f9fa; color: inherit; }
+    .btn-white:hover { background: #f8f9fa; }
     .badge { font-weight: 600; font-size: 0.75rem; }
     .table-hover tbody tr:hover { background-color: rgba(0, 127, 63, 0.02); }
-    .card h4 { font-size: 1.4rem; }
-
-    /* Ajuste para que la paginación sea pequeña y azul */
-    .custom-pagination .pagination {
-        margin-bottom: 0;
-    }
-    .custom-pagination .page-link {
-        padding: 0.4rem 0.75rem;
-        font-size: 0.85rem;
-        color: #0d6efd; /* Color azul Bootstrap */
-    }
-    .custom-pagination .page-item.active .page-link {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
-        color: white;
-    }
+    .card { border-radius: 12px; }
+    
+    /* Paginación */
+    .custom-pagination .page-link { color: #0d6efd; border-radius: 8px; margin: 0 2px; }
+    .custom-pagination .page-item.active .page-link { background-color: #0d6efd; border-color: #0d6efd; }
 </style>
 
 @endsection

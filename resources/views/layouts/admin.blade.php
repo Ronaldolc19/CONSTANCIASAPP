@@ -245,7 +245,7 @@
             <div class="brand-logo">
                 <i class="fas fa-graduation-cap"></i>
             </div>
-            <span class="brand-name fw-bold fs-5 mb-0">TESVB <span class="text-success">Admin</span></span>
+            <span class="brand-name fw-bold fs-5 mb-0">TESVB <span class="text-success">Servicio Social</span></span>
         </div>
 
         <div class="sidebar-scroll">

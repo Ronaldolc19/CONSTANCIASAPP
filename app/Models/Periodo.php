@@ -20,12 +20,15 @@ class Periodo extends Model
         // Verifica que la llave foránea en la tabla estudiantes se llame 'id_periodo'
         return $this->hasMany(Estudiante::class, 'id_periodo');
     }
-     public function getPeriodoFormateadoAttribute()
+    public function getPeriodoFormateadoAttribute()
     {
-        // Asegura que Carbon traduzca a español si tu servidor lo soporta
+        // Asegura que Carbon traduzca a español
         Carbon::setLocale('es');
-        $inicio = Carbon::parse($this->fecha_inicio)->translatedFormat('j \\d\\e F \\d\\e Y');
-        $fin = Carbon::parse($this->fecha_fin)->translatedFormat('j \\d\\e F \\d\\e Y');
+
+        // Cambiamos 'j' por 'd' para obtener 01, 02, etc.
+        $inicio = Carbon::parse($this->fecha_inicio)->translatedFormat('d \\d\\e F \\d\\e Y');
+        $fin = Carbon::parse($this->fecha_fin)->translatedFormat('d \\d\\e F \\d\\e Y');
+
         return "{$inicio} al {$fin}";
-    }
+}
 }

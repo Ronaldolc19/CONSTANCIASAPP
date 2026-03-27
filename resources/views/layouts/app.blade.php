@@ -78,7 +78,7 @@
                     <img src="{{ asset('images/logo_tesvb.png') }}" alt="Logo" style="height: 40px; margin-right: 12px;">
                     <div class="d-flex flex-column">
                         <span class="fw-bold lh-1 h5 mb-0 text-uppercase">TESVB</span>
-                        <small style="font-size: 0.7rem; opacity: 0.8;">Control de Constancias</small>
+                        <small style="font-size: 0.7rem; opacity: 0.8;">Control de Liberación de Constancias Servicio Social</small>
                     </div>
                 </a>
                 
@@ -149,7 +149,7 @@
     <footer class="py-3 mt-auto">
         <div class="container text-center">
             <p class="small mb-0">
-                &copy; {{ date('Y') }} TESVB. Todos los derechos reservados.
+                &copy; {{ date('Y') }} Tecnológico de Estudios Superiores de Valle de Bravo.
             </p>
         </div>
     </footer>

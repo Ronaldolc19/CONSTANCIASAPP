@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Dashboard Profesional')
+@section('title', 'Dashboard ')
 
 @section('content')
 <div class="container-fluid py-4">
@@ -17,19 +17,19 @@
             </button>
             <div class="bg-white border rounded px-3 py-2 shadow-sm d-flex align-items-center">
                 <i class="bi bi-clock-fill text-success me-2"></i>
-                <span class="small fw-bold">{{ now()->translatedFormat('d F, Y') }}</span>
+                <span class="small fw-bold text-uppercase">{{ now()->translatedFormat('d F, Y') }}</span>
             </div>
         </div>
     </div>
 
-    {{-- INDICADORES CLAVE (KPIs) --}}
+    {{-- INDICADORES CLAVE (KPIs) - TOTALES HISTÓRICOS --}}
     <div class="row g-3 mb-4">
         @php
             $cards = [
-                ['label' => 'Constancias', 'val' => $totalConstancias, 'icon' => 'bi-file-earmark-check', 'color' => '#007F3F'],
-                ['label' => 'Estudiantes', 'val' => $totalEstudiantes, 'icon' => 'bi-people', 'color' => '#0dcaf0'],
-                ['label' => 'Empresas', 'val' => $totalEmpresas, 'icon' => 'bi-building', 'color' => '#800020'],
-                ['label' => 'Ciclos', 'val' => $totalPeriodos, 'icon' => 'bi-calendar-range', 'color' => '#ffc107']
+                ['label' => 'Total Constancias', 'val' => $totalConstancias, 'icon' => 'bi-file-earmark-check', 'color' => '#007F3F'],
+                ['label' => 'Alumnos Registrados', 'val' => $totalEstudiantes, 'icon' => 'bi-people', 'color' => '#0dcaf0'],
+                ['label' => 'Empresas Aliadas', 'val' => $totalEmpresas, 'icon' => 'bi-building', 'color' => '#800020'],
+                ['label' => 'Ciclos Aperturados', 'val' => $totalPeriodos, 'icon' => 'bi-calendar-range', 'color' => '#ffc107']
             ];
         @endphp
         @foreach($cards as $c)
@@ -38,8 +38,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <span class="text-muted small fw-bold text-uppercase">{{ $c['label'] }}</span>
-                            <h2 class="fw-bold mb-0">{{ $c['val'] }}</h2>
+                            <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem;">{{ $c['label'] }}</span>
+                            <h2 class="fw-bold mb-0">{{ number_format($c['val']) }}</h2>
                         </div>
                         <div class="icon-circle" style="background: {{ $c['color'] }}20; color: {{ $c['color'] }};">
                             <i class="bi {{ $c['icon'] }}"></i>
@@ -51,12 +51,13 @@
         @endforeach
     </div>
 
-    {{-- SECCIÓN DE GRÁFICAS --}}
+    {{-- SECCIÓN DE GRÁFICAS (CICLO ACTUAL) --}}
     <div class="row g-4 mb-4">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm h-100 rounded-4">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between">
                     <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill me-2 text-success"></i>Constancias por Período Académico</h6>
+                    <span class="badge bg-light text-success border small">Solo Ciclo Activo</span>
                 </div>
                 <div class="card-body">
                     <canvas id="periodosChart" height="300"></canvas>
@@ -79,7 +80,7 @@
         <div class="col-lg-7">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-white border-0 py-3">
-                    <h6 class="fw-bold mb-0"><i class="bi bi-building-check me-2 text-danger"></i>Uso de Empresas (Top 10)</h6>
+                    <h6 class="fw-bold mb-0"><i class="bi bi-building-check me-2 text-danger"></i>Uso de Empresas </h6>
                 </div>
                 <div class="card-body">
                     <canvas id="empresasChart" height="280"></canvas>
@@ -87,7 +88,7 @@
             </div>
         </div>
 
-        {{-- ACCIONES RÁPIDAS --}}
+        {{-- ACCIONES RÁPIDAS RESTAURADAS --}}
         <div class="col-lg-5">
             <h6 class="fw-bold mb-3 text-muted small text-uppercase"><i class="bi bi-lightning-charge-fill me-1"></i> Accesos Directos</h6>
             <div class="row g-2">
@@ -138,10 +139,10 @@
                 
                 {{-- BOTÓN DE REINICIO --}}
                 <div class="col-12 mt-2">
-                    <form action="{{ route('dashboard.reiniciar') }}" method="POST" onsubmit="return confirm('¿Estás seguro de reiniciar el ciclo? Todas las constancias actuales se archivarán y el dashboard volverá a cero.')">
+                    <form action="{{ route('dashboard.reiniciar') }}" method="POST" onsubmit="return confirm('¿Confirmar Reinicio? Las gráficas volverán a cero pero el historial total de las Cards se mantendrá.')">
                         @csrf
                         <button type="submit" class="btn btn-outline-danger w-100 rounded-4 p-2 fw-bold border-dashed">
-                            <i class="bi bi-arrow-counterclockwise me-2"></i> Reiniciar Ciclo Escolar
+                            <i class="bi bi-arrow-counterclockwise me-2"></i> Reiniciar Ciclo Escolar 
                         </button>
                     </form>
                 </div>
@@ -154,54 +155,84 @@
     .card-kpi { border-radius: 15px; transition: transform 0.2s; }
     .card-kpi:hover { transform: translateY(-5px); }
     .icon-circle { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
-    .btn-action { background: #fff; transition: all 0.2s; }
+    .btn-action { background: #fff; transition: all 0.2s; border-radius: 1.25rem; }
     .btn-action:hover { background: #f8fdf9; border-color: #007F3F !important; transform: scale(1.02); }
     .bg-danger-subtle { background-color: #f8d7da; }
     .bg-primary-subtle { background-color: #cfe2ff; }
     .bg-warning-subtle { background-color: #fff3cd; }
     .bg-success-subtle { background-color: #d1e7dd; }
-    .border-dashed { border-style: dashed !important; }
+    .border-dashed { border-style: dashed !important; border-width: 2px; }
 </style>
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        Chart.register(ChartDataLabels);
+
         const colors = ['#007F3F', '#800020', '#F5821F', '#0dcaf0', '#6610f2', '#6c757d', '#d63384'];
 
-        // Gráficas (Almacenamos en constantes para poder exportarlas)
-        const chartP = new Chart(document.getElementById('periodosChart'), {
+        // Períodos
+        new Chart(document.getElementById('periodosChart'), {
             type: 'bar',
             data: {
                 labels: {!! json_encode($periodosLabels) !!},
                 datasets: [{ label: 'Constancias', data: {!! json_encode($periodosData) !!}, backgroundColor: '#007F3F', borderRadius: 8 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    datalabels: { color: '#fff', anchor: 'end', align: 'bottom', font: { weight: 'bold' } }
+                }
+            }
         });
 
-        const chartC = new Chart(document.getElementById('distribucionCarreraChart'), {
+        // Carreras
+        new Chart(document.getElementById('distribucionCarreraChart'), {
             type: 'doughnut',
             data: {
                 labels: {!! json_encode($carrerasLabels) !!},
                 datasets: [{ data: {!! json_encode($carrerasData) !!}, backgroundColor: colors }]
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                cutout: '65%', 
+                plugins: { 
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        color: '#fff',
+                        font: { weight: 'bold', size: 12 },
+                        formatter: (val) => val > 0 ? val : ''
+                    }
+                } 
+            }
         });
 
+        // Empresas
         new Chart(document.getElementById('empresasChart'), {
             type: 'bar',
             data: {
                 labels: {!! json_encode($empresasLabels) !!},
                 datasets: [{ label: 'Alumnos', data: {!! json_encode($empresasData) !!}, backgroundColor: '#800020', borderRadius: 5 }]
             },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            options: { 
+                indexAxis: 'y', 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { display: false },
+                    datalabels: { color: '#fff', font: { weight: 'bold' } }
+                } 
+            }
         });
     });
 
-    // FUNCIÓN PARA EXPORTAR PDF CON GRÁFICAS
     function exportarInforme() {
-        // Captura de los 3 canvas
         const imgPeriodos = document.getElementById('periodosChart').toDataURL('image/png');
         const imgCarreras = document.getElementById('distribucionCarreraChart').toDataURL('image/png');
         const imgEmpresas = document.getElementById('empresasChart').toDataURL('image/png');
@@ -209,12 +240,10 @@
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = "{{ route('dashboard.pdf') }}";
-        form.innerHTML = `
-            @csrf
+        form.innerHTML = `@csrf
             <input type="hidden" name="imgPeriodos" value="${imgPeriodos}">
             <input type="hidden" name="imgCarreras" value="${imgCarreras}">
-            <input type="hidden" name="imgEmpresas" value="${imgEmpresas}">
-        `;
+            <input type="hidden" name="imgEmpresas" value="${imgEmpresas}">`;
         document.body.appendChild(form);
         form.submit();
     }

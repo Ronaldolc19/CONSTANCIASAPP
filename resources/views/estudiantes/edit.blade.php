@@ -8,7 +8,7 @@
     {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold mb-0" style="color: var(--tesvb-green);">Editar Expediente</h3>
+            <h3 class="fw-bold mb-0" style="color: #007F3F;">Editar Expediente</h3>
             <p class="text-muted small mb-0">Gestión centralizada de datos y folios oficiales</p>
         </div>
         <a href="{{ route('estudiantes.index') }}" class="btn btn-light border shadow-sm px-4 rounded-3">
@@ -74,7 +74,7 @@
 
                         <hr class="my-5 opacity-25">
 
-                        {{-- SECCIÓN 2: DATOS ACADÉMICOS Y VINCULACIÓN --}}
+                        {{-- SECCIÓN 2: ACADÉMICOS Y EMPRESA --}}
                         <div class="row mb-5">
                             <div class="col-md-3">
                                 <h6 class="fw-bold text-uppercase small text-success mb-3">2. Académicos</h6>
@@ -92,18 +92,27 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold small">Empresa Asignada</label>
-                                        <select name="id_empresa" class="form-select rounded-3">
-                                            <option value="">-- Sin asignar --</option>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-success"></i></span>
+                                            <input list="datalist-empresas" id="input-empresa" class="form-control border-start-0 ps-0 rounded-end-3" 
+                                                placeholder="Buscar empresa..." 
+                                                value="{{ $estudiante->empresa ? $estudiante->empresa->nombre : '' }}"
+                                                autocomplete="off">
+                                        </div>
+                                        <input type="hidden" name="id_empresa" id="hidden-id-empresa" value="{{ $estudiante->id_empresa }}">
+                                        <datalist id="datalist-empresas">
                                             @foreach($empresas as $e)
-                                                <option value="{{ $e->id_empresa }}" {{ $estudiante->id_empresa == $e->id_empresa ? 'selected' : '' }}>{{ $e->nombre }}</option>
+                                                <option data-id="{{ $e->id_empresa }}" value="{{ $e->nombre }}">
                                             @endforeach
-                                        </select>
+                                        </datalist>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold small">Periodo Escolar</label>
-                                        <select name="id_periodo" class="form-select rounded-3">
+                                        <select name="id_periodo" class="form-select rounded-3 shadow-sm" required>
                                             @foreach($periodos as $p)
-                                                <option value="{{ $p->id_periodo }}" {{ $estudiante->id_periodo == $p->id_periodo ? 'selected' : '' }}>{{ $p->periodo_formateado }}</option>
+                                                <option value="{{ $p->id_periodo }}" {{ $estudiante->id_periodo == $p->id_periodo ? 'selected' : '' }}>
+                                                    {{ $p->fecha_inicio }} - {{ $p->fecha_fin }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -113,7 +122,7 @@
 
                         <hr class="my-5 opacity-25">
 
-                        {{-- SECCIÓN 3: CERTIFICACIÓN Y FOLIOS (CAMPOS QUE FALTABAN) --}}
+                        {{-- SECCIÓN 3: CERTIFICACIÓN (CALIFICACIÓN Y FOLIOS) --}}
                         <div class="row">
                             <div class="col-md-3">
                                 <h6 class="fw-bold text-uppercase small text-success mb-3">3. Certificación</h6>
@@ -121,22 +130,35 @@
                             </div>
                             <div class="col-md-9">
                                 <div class="row g-3">
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Calificación Obtenida</label>
+                                        <div class="d-flex align-items-start gap-3">
+                                            <select name="calificacion" class="form-select rounded-3 border-success fw-bold shadow-sm" style="width: 180px;">
+                                                <option value="97" {{ old('calificacion', $estudiante->calificacion) == '97' ? 'selected' : '' }}>97</option>
+                                                <option value="90" {{ old('calificacion', $estudiante->calificacion) == '90' ? 'selected' : '' }}>90</option>
+                                                <option value="80" {{ old('calificacion', $estudiante->calificacion) == '80' ? 'selected' : '' }}>80</option>
+                                            </select>
+                                            <div class="alert alert-success border-0 py-2 px-3 small rounded-3 mb-0 shadow-sm flex-grow-1">
+                                                <i class="bi bi-info-circle-fill me-2"></i>
+                                                97: <strong>Excelente</strong> | 90: <strong>Muy Bien</strong> | 80: <strong>Bien</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold small">No. de Registro</label>
-                                        <input type="text" name="no_registro" class="form-control rounded-3 shadow-sm" value="{{ old('no_registro', $estudiante->no_registro) }}">
+                                        <input type="text" name="no_registro" class="form-control rounded-3 shadow-sm bg-light fw-bold" value="{{ old('no_registro', $estudiante->no_registro) }}" readonly>
                                     </div>
-                                    <div class="col-md-4">
+                                    
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold small">No. de Folio</label>
-                                        <input type="text" name="no_folio" class="form-control rounded-3 shadow-sm border-danger-subtle" value="{{ old('no_folio', $estudiante->no_folio) }}">
+                                        <input type="text" name="no_folio" class="form-control rounded-3 shadow-sm bg-light fw-bold text-danger" value="{{ old('no_folio', $estudiante->no_folio) }}" readonly>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold small">Calificación</label>
-                                        <input type="number" step="0.1" name="calificacion" class="form-control rounded-3" value="{{ old('calificacion', $estudiante->calificacion) }}">
-                                    </div>
-                                    <div class="col-md-12">
+
+                                    <div class="col-md-12 mt-3">
                                         <label class="form-label fw-semibold small">Fecha de Emisión</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-white"><i class="bi bi-calendar-event"></i></span>
+                                        <div class="input-group" style="max-width: 300px;">
+                                            <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-success"></i></span>
                                             <input type="date" name="fecha_emision" class="form-control rounded-3" value="{{ old('fecha_emision', $estudiante->fecha_emision) }}">
                                         </div>
                                     </div>
@@ -149,11 +171,11 @@
                     {{-- Footer de Acciones --}}
                     <div class="card-footer bg-light p-4 border-0">
                         <div class="d-flex justify-content-end gap-3">
-                            <a href="{{ route('estudiantes.index') }}" class="btn btn-outline-secondary px-4 rounded-3">
+                            <a href="{{ route('estudiantes.index') }}" class="btn btn-outline-secondary px-4 rounded-pill">
                                 Cancelar cambios
                             </a>
-                            <button type="button" class="btn btn-success px-5 rounded-3 shadow" onclick="confirmUpdate()">
-                                <i class="fas fa-save me-2"></i> Guardar Expediente
+                            <button type="button" class="btn btn-success px-5 rounded-pill shadow" onclick="confirmUpdate()">
+                                <i class="fas fa-save me-2"></i> Actualizar Expediente
                             </button>
                         </div>
                     </div>
@@ -168,20 +190,29 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Lógica del Datalist para Empresa
+        const inputEmpresa = document.getElementById('input-empresa');
+        const dlEmpresa = document.getElementById('datalist-empresas');
+        const hiddenEmpresa = document.getElementById('hidden-id-empresa');
+
+        inputEmpresa.addEventListener('input', function() {
+            const opt = Array.from(dlEmpresa.options).find(o => o.value === this.value);
+            hiddenEmpresa.value = opt ? opt.getAttribute('data-id') : "";
+        });
+    });
+
     function confirmUpdate() {
         Swal.fire({
-            title: '¿Confirmar cambios?',
-            text: "Los datos actualizados se reflejarán en las constancias generadas.",
-            icon: 'warning',
+            title: '¿Confirmar actualización?',
+            text: "Se guardarán los cambios en el expediente del alumno.",
+            icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#007F3F',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, guardar',
+            confirmButtonText: 'Sí, actualizar',
             cancelButtonText: 'Revisar',
-            reverseButtons: true,
-            customClass: {
-                popup: 'rounded-4'
-            }
+            reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
                 document.getElementById('edit-estudiante-form').submit();
@@ -195,12 +226,8 @@
         border-color: #007F3F;
         box-shadow: 0 0 0 0.25rem rgba(0, 127, 63, 0.1);
     }
-    .form-label {
-        color: #4b5563;
-        margin-bottom: 0.5rem;
-    }
-    .card-header {
-        background-color: #fff !important;
-    }
+    .card { border-radius: 20px; }
+    .btn-success { background-color: #007F3F; border: none; }
+    .btn-success:hover { background-color: #006633; transform: translateY(-1px); }
 </style>
 @endpush
